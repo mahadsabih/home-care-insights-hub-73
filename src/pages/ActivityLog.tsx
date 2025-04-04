@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+// import { Calendar } from '@/components/ui/calendar';
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
@@ -260,23 +260,25 @@ const ActivityLog = () => {
                     <div className="p-4 flex flex-col gap-2">
                       <div>
                         <Label className="mb-2 block">From Date</Label>
-                        <Calendar
+                        <h3>Calendar</h3>
+                        {/* <Calendar
                           mode="single"
                           selected={fromDate}
                           onSelect={setFromDate}
                           className="p-3 pointer-events-auto border rounded-md"
                           initialFocus
-                        />
+                        /> */}
                       </div>
                       <div>
                         <Label className="mb-2 block">To Date</Label>
-                        <Calendar
+                        <h3>Calendar</h3>
+                        {/* <Calendar
                           mode="single"
                           selected={toDate}
                           onSelect={setToDate}
                           className="p-3 pointer-events-auto border rounded-md"
                           initialFocus
-                        />
+                        /> */}
                       </div>
                     </div>
                   </PopoverContent>
@@ -432,7 +434,10 @@ const ActivityLog = () => {
                   onClick={() => viewEntry(entry)}
                 >
                   <TableCell>{format(entry.date, 'dd/MM/yyyy HH:mm')}</TableCell>
-                  <TableCell><LogTypeTag type={entry.type} /></TableCell>
+                  <TableCell>
+                    <h3>LogType</h3>
+                    {/* <LogTypeTag type={entry.type} /> */}
+                  </TableCell>
                   <TableCell>{entry.client}</TableCell>
                   <TableCell className="max-w-[200px] truncate">{entry.subject}</TableCell>
                   <TableCell>{entry.staffInvolved || '-'}</TableCell>
