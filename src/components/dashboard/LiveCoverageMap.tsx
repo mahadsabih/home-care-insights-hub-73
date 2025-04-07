@@ -110,7 +110,11 @@ const LiveCoverageMap = () => {
             {/* Simplified map representation */}
             <div className="w-full h-full relative">
               {/* Map grid lines and background */}
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"%23e5e3df\"/><path d=\"M0,0 L100,0 L100,100 L0,100 Z\" fill=\"none\" stroke=\"%23d1d1d1\" stroke-width=\"0.5\"/><path d=\"M50,0 L50,100 M0,50 L100,50\" fill=\"none\" stroke=\"%23d1d1d1\" stroke-width=\"0.5\"/></svg>')] bg-repeat"></div>
+              <div className="absolute inset-0 bg-gray-100"></div>
+              <div className="absolute inset-0" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e5e3df'/%3E%3Cpath d='M0,0 L100,0 L100,100 L0,100 Z' fill='none' stroke='%23d1d1d1' stroke-width='0.5'/%3E%3Cpath d='M50,0 L50,100 M0,50 L100,50' fill='none' stroke='%23d1d1d1' stroke-width='0.5'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'repeat'
+              }}></div>
               
               {/* Main roads */}
               <div className="absolute left-1/2 top-1/2 w-[120%] h-[2px] bg-[#c0c0c0] transform -translate-x-1/2 -translate-y-1/2 rotate-45"></div>

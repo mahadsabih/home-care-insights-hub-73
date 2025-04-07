@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Users, Briefcase, ClipboardCheck, ClipboardList } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
