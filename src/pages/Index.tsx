@@ -7,6 +7,7 @@ import ShiftOverview from "@/components/dashboard/ShiftOverview";
 import ActivityLogSummary from "@/components/dashboard/ActivityLogSummary";
 import QuickActions from "@/components/dashboard/QuickActions";
 import DataVisualization from "@/components/dashboard/DataVisualization";
+import LiveCoverageMap from "@/components/dashboard/LiveCoverageMap";
 
 const Index = () => {
   // Current date formatting
@@ -76,8 +77,13 @@ const Index = () => {
           </div>
         </div>
         
-        <div className="grid gap-6">
-          <QuickActions />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-7 md:col-span-1 lg:col-span-3">
+            <QuickActions />
+          </div>
+          <div className="col-span-7 md:col-span-1 lg:col-span-4">
+            <LiveCoverageMap />
+          </div>
         </div>
         
         <div className="grid gap-6">
