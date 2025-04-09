@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, FileSpreadsheet, SlidersHorizontal, Filter } from "lucide-react";
+import { PlusCircle, FileSpreadsheet, SlidersHorizontal } from "lucide-react";
 import Sidebar from "@/components/notes/Sidebar";
 import RecordsTable from "@/components/notes/RecordsTable";
 import AddEditRecordModal from "@/components/notes/AddEditRecordModal";
