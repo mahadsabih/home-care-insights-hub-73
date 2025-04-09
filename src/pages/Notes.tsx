@@ -1,229 +1,276 @@
 
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PlusCircle, FileSpreadsheet, Settings } from "lucide-react";
 import Sidebar from "@/components/notes/Sidebar";
 import RecordsTable from "@/components/notes/RecordsTable";
 import AddEditRecordModal from "@/components/notes/AddEditRecordModal";
 import ImportExcelModal from "@/components/notes/ImportExcelModal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PlusCircle, Upload, FileSpreadsheet } from "lucide-react";
+import CustomTableHeadersModal from "@/components/notes/CustomTableHeadersModal";
+import Navbar from "@/components/layout/Navbar";
 
-// Sample categories/sheet names for demonstration (would come from database in a real app)
+// Sample initial categories
 const initialCategories = [
-  { id: "1", name: "Tasks", icon: "CheckSquare" },
-  { id: "2", name: "Contacts", icon: "Users" },
-  { id: "3", name: "Projects", icon: "Briefcase" },
-  { id: "4", name: "Meetings", icon: "Calendar" },
-  { id: "5", name: "Ideas", icon: "Lightbulb" }
+  { id: uuidv4(), name: "Tasks", icon: "CheckSquare" },
+  { id: uuidv4(), name: "Contacts", icon: "Users" },
+  { id: uuidv4(), name: "Projects", icon: "Briefcase" },
+  { id: uuidv4(), name: "Meetings", icon: "Calendar" },
+  { id: uuidv4(), name: "Ideas", icon: "Lightbulb" },
 ];
 
-// Sample initial data for each category (would come from database in a real app)
-const initialData = {
-  "1": [
-    { id: "t1", title: "Complete project proposal", status: "In Progress", priority: "High", dueDate: "2025-04-15" },
-    { id: "t2", title: "Review marketing materials", status: "Not Started", priority: "Medium", dueDate: "2025-04-20" },
-    { id: "t3", title: "Update client documentation", status: "Completed", priority: "Low", dueDate: "2025-04-10" },
+// Sample records for demo
+const sampleRecords = {
+  "Tasks": [
+    { id: uuidv4(), title: "Complete client assessment", status: "In Progress", priority: "High", dueDate: "2023-04-15" },
+    { id: uuidv4(), title: "Update care plan", status: "Pending", priority: "Medium", dueDate: "2023-04-20" }
   ],
-  "2": [
-    { id: "c1", name: "John Smith", email: "john@example.com", phone: "555-1234", company: "ABC Corp" },
-    { id: "c2", name: "Emma Johnson", email: "emma@example.com", phone: "555-5678", company: "XYZ Ltd" },
+  "Contacts": [
+    { id: uuidv4(), name: "Sarah Johnson", email: "sarah.j@example.com", phone: "555-123-4567", company: "Care Health Services" },
+    { id: uuidv4(), name: "Michael Brown", email: "mbrown@example.com", phone: "555-987-6543", company: "Community Nursing" }
   ],
-  "3": [
-    { id: "p1", name: "Website Redesign", client: "ABC Corp", deadline: "2025-05-15", status: "In Progress" },
-    { id: "p2", name: "Mobile App Development", client: "XYZ Ltd", deadline: "2025-06-30", status: "Planning" },
-  ],
-  "4": [
-    { id: "m1", title: "Client Review", date: "2025-04-12", time: "10:00", participants: "John, Emma, Michael" },
-    { id: "m2", title: "Team Planning", date: "2025-04-14", time: "14:00", participants: "All Team" },
-  ],
-  "5": [
-    { id: "i1", title: "New Feature Concept", description: "Add voice recognition to the app", category: "Product" },
-    { id: "i2", title: "Marketing Campaign", description: "Social media push for Q2", category: "Marketing" },
+  "Projects": [
+    { id: uuidv4(), name: "Care Quality Assessment", client: "Smithfield Care Home", deadline: "2023-05-30", status: "Active" },
+    { id: uuidv4(), name: "Staff Training Program", client: "Internal", deadline: "2023-06-15", status: "Planning" }
   ]
 };
 
 const Notes = () => {
-  const { toast } = useToast();
   const [categories, setCategories] = useState(initialCategories);
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
-  const [records, setRecords] = useState(initialData[selectedCategory.id] || []);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategories[0]);
+  const [records, setRecords] = useState<Record<string, any[]>>(sampleRecords);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredRecords, setFilteredRecords] = useState<any[]>([]);
+  
+  // Modals state
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isCustomHeadersModalOpen, setIsCustomHeadersModalOpen] = useState(false);
+  const [currentRecord, setCurrentRecord] = useState<any>(null);
+  
+  // Custom headers state
+  const [customHeaders, setCustomHeaders] = useState<Record<string, string[]>>({
+    "Tasks": ["title", "status", "priority", "dueDate"],
+    "Contacts": ["name", "email", "phone", "company"],
+    "Projects": ["name", "client", "deadline", "status"],
+    "Meetings": ["title", "date", "time", "participants"],
+    "Ideas": ["title", "description", "category"]
+  });
 
-  // Update records when selected category changes
+  // Filter records based on search term
   useEffect(() => {
-    setRecords(initialData[selectedCategory.id] || []);
-  }, [selectedCategory]);
+    if (!selectedCategory) return;
+    
+    const categoryRecords = records[selectedCategory.name] || [];
+    
+    if (searchTerm.trim() === "") {
+      setFilteredRecords(categoryRecords);
+    } else {
+      const filtered = categoryRecords.filter((record) => {
+        return Object.values(record).some((value) =>
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
+      setFilteredRecords(filtered);
+    }
+  }, [searchTerm, selectedCategory, records]);
 
-  // Handle adding a new record
+  // Initialize records for a category if they don't exist
+  useEffect(() => {
+    if (selectedCategory && !records[selectedCategory.name]) {
+      setRecords((prev) => ({ ...prev, [selectedCategory.name]: [] }));
+    }
+    
+    if (selectedCategory && !customHeaders[selectedCategory.name]) {
+      setCustomHeaders((prev) => ({ ...prev, [selectedCategory.name]: [] }));
+    }
+  }, [selectedCategory]);
+  
+  // Handle category selection
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category);
+    setSearchTerm("");
+  };
+  
+  // Open add record modal
   const handleAddRecord = () => {
     setCurrentRecord(null);
     setIsAddEditModalOpen(true);
   };
-
-  // Handle editing a record
+  
+  // Open edit record modal
   const handleEditRecord = (record) => {
     setCurrentRecord(record);
     setIsAddEditModalOpen(true);
   };
-
-  // Handle saving a record (add or edit)
-  const handleSaveRecord = (record) => {
-    if (currentRecord) {
-      // Edit existing record
-      const updatedRecords = records.map(r => r.id === record.id ? record : r);
-      setRecords(updatedRecords);
-      toast({
-        title: "Record updated",
-        description: "The record has been updated successfully.",
-      });
-    } else {
-      // Add new record with a unique ID
-      const newRecord = { ...record, id: `${selectedCategory.id[0]}${Date.now()}` };
-      setRecords([...records, newRecord]);
-      toast({
-        title: "Record added",
-        description: "New record has been added successfully.",
-      });
-    }
-    setIsAddEditModalOpen(false);
-  };
-
-  // Handle deleting a record
+  
+  // Delete record
   const handleDeleteRecord = (id) => {
-    const updatedRecords = records.filter(record => record.id !== id);
-    setRecords(updatedRecords);
-    toast({
-      title: "Record deleted",
-      description: "The record has been deleted successfully.",
-    });
-  };
-
-  // Handle importing data from Excel
-  const handleImportData = (newData, categoryName) => {
-    // Check if category exists, create if not
-    let categoryId = categories.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase())?.id;
-    
-    if (!categoryId) {
-      // Create a new category with a default icon
-      const newCategory = {
-        id: `${categories.length + 1}`,
-        name: categoryName,
-        icon: "FileSpreadsheet"
-      };
-      setCategories([...categories, newCategory]);
-      categoryId = newCategory.id;
+    if (selectedCategory) {
+      const categoryName = selectedCategory.name;
+      const updatedRecords = records[categoryName].filter(record => record.id !== id);
       
-      // Initialize empty data for this category
-      initialData[categoryId] = [];
+      setRecords(prev => ({
+        ...prev,
+        [categoryName]: updatedRecords
+      }));
+      
+      toast.success("Record deleted successfully");
+    }
+  };
+  
+  // Save record (add or update)
+  const handleSaveRecord = (recordData) => {
+    if (!selectedCategory) return;
+    
+    const categoryName = selectedCategory.name;
+    let updatedRecords;
+    
+    if (currentRecord) {
+      // Update existing record
+      updatedRecords = records[categoryName].map(record => 
+        record.id === currentRecord.id ? { ...recordData, id: currentRecord.id } : record
+      );
+      toast.success("Record updated successfully");
+    } else {
+      // Add new record
+      const newRecord = { ...recordData, id: uuidv4() };
+      updatedRecords = [...(records[categoryName] || []), newRecord];
+      toast.success("Record added successfully");
     }
     
-    // Add IDs to imported records
-    const recordsWithIds = newData.map((record, index) => ({
-      ...record,
-      id: `${categoryId[0]}imp${index}${Date.now()}`
+    setRecords(prev => ({
+      ...prev,
+      [categoryName]: updatedRecords
     }));
     
-    // Merge with existing records (this is just for UI demo, in real app would use database)
-    initialData[categoryId] = [...(initialData[categoryId] || []), ...recordsWithIds];
-    
-    // Update current view if we're looking at the category being imported
-    if (selectedCategory.id === categoryId) {
-      setRecords([...records, ...recordsWithIds]);
-    }
-    
-    // Select the category we just imported to
-    const categoryToSelect = categories.find(cat => cat.id === categoryId) || 
-                           categories[categories.length - 1]; // Fallback to last category (newly created)
-    setSelectedCategory(categoryToSelect);
-    
-    toast({
-      title: "Data imported successfully",
-      description: `${recordsWithIds.length} records imported to ${categoryName}`,
-    });
-    
-    setIsImportModalOpen(false);
+    setIsAddEditModalOpen(false);
   };
-
-  // Filter records based on search query
-  const filteredRecords = records.filter(record => {
-    const searchLower = searchQuery.toLowerCase();
-    // Search all fields of the record
-    return Object.values(record).some(value => 
-      value && value.toString().toLowerCase().includes(searchLower)
-    );
-  });
-
+  
+  // Import excel data
+  const handleImportExcel = (data, sheetName) => {
+    if (!data || !data.length) return;
+    
+    const newCategoryId = uuidv4();
+    const newCategory = {
+      id: newCategoryId,
+      name: sheetName,
+      icon: "FileSpreadsheet"
+    };
+    
+    // Add new headers based on first record's keys
+    const headers = Object.keys(data[0]);
+    
+    // Add the new category
+    setCategories(prev => [...prev, newCategory]);
+    
+    // Add records with IDs
+    const recordsWithIds = data.map(record => ({ ...record, id: uuidv4() }));
+    
+    // Update records and headers
+    setRecords(prev => ({
+      ...prev,
+      [sheetName]: recordsWithIds
+    }));
+    
+    setCustomHeaders(prev => ({
+      ...prev,
+      [sheetName]: headers
+    }));
+    
+    // Select the new category
+    setSelectedCategory(newCategory);
+    setIsImportModalOpen(false);
+    
+    toast.success(`Imported ${data.length} records to "${sheetName}"`);
+  };
+  
+  // Save custom headers
+  const handleSaveCustomHeaders = (headers) => {
+    if (!selectedCategory) return;
+    
+    setCustomHeaders(prev => ({
+      ...prev,
+      [selectedCategory.name]: headers
+    }));
+    
+    setIsCustomHeadersModalOpen(false);
+    toast.success("Table headers updated successfully");
+  };
+  
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar 
-        categories={categories} 
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        onImportExcel={() => setIsImportModalOpen(true)}
-      />
+    <div className="flex flex-col h-screen">
+      <Navbar />
       
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Top bar with search and buttons */}
-        <div className="px-6 py-4 border-b flex items-center justify-between">
-          <div className="flex items-center space-x-4 flex-1">
-            <h1 className="text-2xl font-semibold">{selectedCategory.name}</h1>
-            <div className="flex-1 max-w-sm">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectCategory}
+          onImportExcel={() => setIsImportModalOpen(true)}
+        />
+        
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">{selectedCategory?.name || "Notes"}</h1>
+            
+            <div className="flex items-center gap-2">
               <Input
                 placeholder="Search records..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
+                className="w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
+              
+              <Button variant="outline" size="icon" onClick={() => setIsCustomHeadersModalOpen(true)} title="Customize Headers">
+                <Settings className="h-4 w-4" />
+              </Button>
+              
+              <Button onClick={handleAddRecord}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Record
+              </Button>
             </div>
           </div>
           
-          <div className="flex gap-3">
-            <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
-              <Upload className="h-4 w-4 mr-2" />
-              Import Excel
-            </Button>
-            <Button onClick={handleAddRecord}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Record
-            </Button>
-          </div>
-        </div>
-        
-        {/* Table */}
-        <div className="flex-1 overflow-auto p-6">
           <RecordsTable
             records={filteredRecords}
+            customHeaders={selectedCategory ? customHeaders[selectedCategory.name] : []}
             onEditRecord={handleEditRecord}
             onDeleteRecord={handleDeleteRecord}
           />
         </div>
       </div>
       
-      {/* Modals */}
-      {isAddEditModalOpen && (
-        <AddEditRecordModal
-          isOpen={isAddEditModalOpen}
-          onClose={() => setIsAddEditModalOpen(false)}
-          record={currentRecord}
-          categoryName={selectedCategory.name}
-          onSave={handleSaveRecord}
-        />
-      )}
+      {/* Add/Edit Record Modal */}
+      <AddEditRecordModal
+        isOpen={isAddEditModalOpen}
+        onClose={() => setIsAddEditModalOpen(false)}
+        record={currentRecord}
+        categoryName={selectedCategory?.name || ""}
+        customHeaders={selectedCategory ? customHeaders[selectedCategory.name] : []}
+        onSave={handleSaveRecord}
+      />
       
-      {isImportModalOpen && (
-        <ImportExcelModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          onImport={handleImportData}
-        />
-      )}
+      {/* Import Excel Modal */}
+      <ImportExcelModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportExcel}
+      />
+      
+      {/* Custom Table Headers Modal */}
+      <CustomTableHeadersModal
+        isOpen={isCustomHeadersModalOpen}
+        onClose={() => setIsCustomHeadersModalOpen(false)}
+        categoryName={selectedCategory?.name || ""}
+        headers={selectedCategory ? customHeaders[selectedCategory.name] || [] : []}
+        onSave={handleSaveCustomHeaders}
+      />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import {
   flexRender,
@@ -27,23 +26,43 @@ import {
 
 interface RecordsTableProps {
   records: any[];
+  customHeaders?: string[];
   onEditRecord: (record: any) => void;
   onDeleteRecord: (id: string) => void;
 }
 
-const RecordsTable = ({ records, onEditRecord, onDeleteRecord }: RecordsTableProps) => {
+const RecordsTable = ({ 
+  records, 
+  customHeaders = [], 
+  onEditRecord, 
+  onDeleteRecord 
+}: RecordsTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  // Dynamically create columns based on the first record's properties
+  // Dynamically create columns based on the headers or first record properties
   const columns = useMemo(() => {
-    if (!records.length) return [];
+    if (!records.length && !customHeaders.length) return [];
     
-    const firstRecord = records[0];
+    // Determine which headers to use
+    let columnKeys: string[] = [];
     
-    // Exclude the id column from display
-    const columnKeys = Object.keys(firstRecord).filter(key => key !== 'id');
+    if (customHeaders.length > 0) {
+      // Use custom headers if provided
+      columnKeys = customHeaders;
+    } else if (records.length > 0) {
+      // Otherwise derive from first record
+      const firstRecord = records[0];
+      columnKeys = Object.keys(firstRecord).filter(key => key !== 'id');
+    }
     
-    // Create columns based on record keys
+    // Format header for display
+    const formatHeader = (header: string) => {
+      return header
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, (str) => str.toUpperCase());
+    };
+    
+    // Create columns based on headers
     const generatedColumns = columnKeys.map(key => ({
       id: key,
       accessorKey: key,
@@ -53,11 +72,14 @@ const RecordsTable = ({ records, onEditRecord, onDeleteRecord }: RecordsTablePro
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="whitespace-nowrap"
         >
-          {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}
+          {formatHeader(key)}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div>{String(row.getValue(key))}</div>,
+      cell: ({ row }) => {
+        const value = row.getValue(key);
+        return <div>{value !== undefined ? String(value) : ""}</div>;
+      },
     }));
     
     // Add actions column
@@ -92,7 +114,7 @@ const RecordsTable = ({ records, onEditRecord, onDeleteRecord }: RecordsTablePro
         },
       },
     ];
-  }, [records, onEditRecord, onDeleteRecord]);
+  }, [records, customHeaders, onEditRecord, onDeleteRecord]);
 
   // Set up the table instance
   const table = useReactTable({

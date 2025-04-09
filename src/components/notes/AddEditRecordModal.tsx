@@ -11,12 +11,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AddEditRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
   record: any | null;
   categoryName: string;
+  customHeaders?: string[];
   onSave: (record: any) => void;
 }
 
@@ -25,6 +34,7 @@ const AddEditRecordModal = ({
   onClose,
   record,
   categoryName,
+  customHeaders = [],
   onSave,
 }: AddEditRecordModalProps) => {
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -35,10 +45,23 @@ const AddEditRecordModal = ({
     if (record) {
       setFormValues({ ...record });
     } else {
-      // For new records, initialize with empty values based on category
-      setFormValues(getEmptyRecordTemplate(categoryName));
+      // For new records, initialize with empty values based on headers
+      const emptyRecord: Record<string, string> = {};
+      
+      // Use custom headers if available, otherwise use preset templates
+      if (customHeaders.length > 0) {
+        customHeaders.forEach(header => {
+          emptyRecord[header] = "";
+        });
+      } else {
+        // Fallback to preset templates
+        setFormValues(getEmptyRecordTemplate(categoryName));
+        return;
+      }
+      
+      setFormValues(emptyRecord);
     }
-  }, [record, categoryName]);
+  }, [record, categoryName, customHeaders, isOpen]);
   
   // Get empty record template based on category name
   const getEmptyRecordTemplate = (category: string) => {
@@ -58,16 +81,71 @@ const AddEditRecordModal = ({
     }
   };
   
+  // Determine if a field should be a textarea (for longer text content)
+  const isTextareaField = (field: string) => {
+    return field.toLowerCase().includes('description') || 
+           field.toLowerCase().includes('notes') || 
+           field.toLowerCase().includes('content');
+  };
+  
+  // Determine if a field should be a select (based on common field names)
+  const getSelectOptions = (field: string) => {
+    const fieldLower = field.toLowerCase();
+    
+    if (fieldLower === 'status') {
+      return ['Not Started', 'In Progress', 'Completed', 'On Hold', 'Cancelled', 'Pending Review'];
+    }
+    
+    if (fieldLower === 'priority') {
+      return ['Low', 'Medium', 'High', 'Critical'];
+    }
+    
+    if (fieldLower.includes('type')) {
+      return ['Internal', 'External', 'Client', 'Personal', 'Business'];
+    }
+    
+    return null;
+  };
+
+  // Determine field type based on field name
+  const getFieldType = (field: string) => {
+    const fieldLower = field.toLowerCase();
+    
+    if (fieldLower.includes('date')) {
+      return 'date';
+    }
+    
+    if (fieldLower.includes('time')) {
+      return 'time';
+    }
+    
+    if (fieldLower.includes('email')) {
+      return 'email';
+    }
+    
+    if (fieldLower.includes('phone')) {
+      return 'tel';
+    }
+    
+    return 'text';
+  };
+  
+  // Format header for display
+  const formatHeader = (header: string) => {
+    return header
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase());
+  };
+  
   // Handle form field changes
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: any) => {
     setFormValues(prev => ({ ...prev, [field]: value }));
   };
   
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const savedRecord = isEditMode ? { ...record, ...formValues } : formValues;
-    onSave(savedRecord);
+    onSave(formValues);
   };
 
   return (
@@ -86,22 +164,53 @@ const AddEditRecordModal = ({
         
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {Object.keys(formValues).map(field => (
-              field !== "id" && (
+            {Object.keys(formValues).map(field => {
+              if (field === "id") return null;
+              
+              const selectOptions = getSelectOptions(field);
+              
+              return (
                 <div key={field} className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor={field} className="text-right capitalize">
-                    {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                  <Label htmlFor={field} className="text-right">
+                    {formatHeader(field)}
                   </Label>
-                  <Input
-                    id={field}
-                    type={field.toLowerCase().includes("date") ? "date" : "text"}
-                    value={formValues[field] || ""}
-                    onChange={(e) => handleChange(field, e.target.value)}
-                    className="col-span-3"
-                  />
+                  
+                  {isTextareaField(field) ? (
+                    <Textarea
+                      id={field}
+                      value={formValues[field] || ""}
+                      onChange={(e) => handleChange(field, e.target.value)}
+                      className="col-span-3"
+                      rows={3}
+                    />
+                  ) : selectOptions ? (
+                    <Select
+                      value={formValues[field] || ""}
+                      onValueChange={(value) => handleChange(field, value)}
+                    >
+                      <SelectTrigger id={field} className="col-span-3">
+                        <SelectValue placeholder={`Select ${formatHeader(field)}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectOptions.map(option => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id={field}
+                      type={getFieldType(field)}
+                      value={formValues[field] || ""}
+                      onChange={(e) => handleChange(field, e.target.value)}
+                      className="col-span-3"
+                    />
+                  )}
                 </div>
-              )
-            ))}
+              );
+            })}
           </div>
           
           <DialogFooter>
