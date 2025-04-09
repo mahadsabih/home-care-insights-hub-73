@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import {
   flexRender,
@@ -5,6 +6,7 @@ import {
   useReactTable,
   getSortedRowModel,
   SortingState,
+  getFilteredRowModel,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -15,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, ArrowUpDown, Edit, Trash } from 'lucide-react';
+import { MoreHorizontal, ArrowUpDown, Edit, Trash, Filter } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 
 interface RecordsTableProps {
   records: any[];
@@ -38,6 +48,7 @@ const RecordsTable = ({
   onDeleteRecord 
 }: RecordsTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
   // Dynamically create columns based on the headers or first record properties
   const columns = useMemo(() => {
@@ -66,20 +77,53 @@ const RecordsTable = ({
     const generatedColumns = columnKeys.map(key => ({
       id: key,
       accessorKey: key,
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="whitespace-nowrap"
-        >
-          {formatHeader(key)}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        return (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="whitespace-nowrap"
+            >
+              {formatHeader(key)}
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Filter className="h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60 p-3" align="start">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Filter {formatHeader(key)}</h4>
+                  <Input 
+                    placeholder="Enter value..."
+                    value={columnFilters[key] || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setColumnFilters(prev => ({
+                        ...prev,
+                        [key]: value
+                      }));
+                    }}
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        );
+      },
       cell: ({ row }) => {
         const value = row.getValue(key);
         return <div>{value !== undefined ? String(value) : ""}</div>;
       },
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue) return true;
+        const value = row.getValue(columnId);
+        if (value === undefined || value === null) return false;
+        return String(value).toLowerCase().includes(filterValue.toLowerCase());
+      }
     }));
     
     // Add actions column
@@ -114,7 +158,17 @@ const RecordsTable = ({
         },
       },
     ];
-  }, [records, customHeaders, onEditRecord, onDeleteRecord]);
+  }, [records, customHeaders, onEditRecord, onDeleteRecord, columnFilters]);
+
+  // Apply column filters from our state to the table
+  const columnFiltersArray = useMemo(() => {
+    return Object.entries(columnFilters)
+      .filter(([_, value]) => value && value.trim() !== '')
+      .map(([id, value]) => ({
+        id,
+        value
+      }));
+  }, [columnFilters]);
 
   // Set up the table instance
   const table = useReactTable({
@@ -122,11 +176,21 @@ const RecordsTable = ({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     state: {
       sorting,
+      columnFilters: columnFiltersArray,
     },
   });
+
+  const clearFilter = (columnId: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[columnId];
+      return newFilters;
+    });
+  };
 
   if (!records.length) {
     return (
@@ -138,47 +202,72 @@ const RecordsTable = ({
   }
 
   return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
+    <div className="space-y-4">
+      {/* Active filters display */}
+      {Object.keys(columnFilters).length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm font-medium">Active filters:</span>
+          {Object.entries(columnFilters).map(([key, value]) => (
+            value && (
+              <Badge key={key} variant="secondary" className="flex items-center gap-1">
+                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: {value}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => clearFilter(key)} />
+              </Badge>
+            )
           ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs"
+            onClick={() => setColumnFilters({})}
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
+      
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No matching records found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

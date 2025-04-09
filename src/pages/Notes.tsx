@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, FileSpreadsheet, Settings } from "lucide-react";
+import { PlusCircle, FileSpreadsheet, SlidersHorizontal, Filter } from "lucide-react";
 import Sidebar from "@/components/notes/Sidebar";
 import RecordsTable from "@/components/notes/RecordsTable";
 import AddEditRecordModal from "@/components/notes/AddEditRecordModal";
@@ -11,7 +11,6 @@ import ImportExcelModal from "@/components/notes/ImportExcelModal";
 import CustomTableHeadersModal from "@/components/notes/CustomTableHeadersModal";
 import Navbar from "@/components/layout/Navbar";
 
-// Sample initial categories
 const initialCategories = [
   { id: uuidv4(), name: "Tasks", icon: "CheckSquare" },
   { id: uuidv4(), name: "Contacts", icon: "Users" },
@@ -20,7 +19,6 @@ const initialCategories = [
   { id: uuidv4(), name: "Ideas", icon: "Lightbulb" },
 ];
 
-// Sample records for demo
 const sampleRecords = {
   "Tasks": [
     { id: uuidv4(), title: "Complete client assessment", status: "In Progress", priority: "High", dueDate: "2023-04-15" },
@@ -43,13 +41,11 @@ const Notes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRecords, setFilteredRecords] = useState<any[]>([]);
   
-  // Modals state
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isCustomHeadersModalOpen, setIsCustomHeadersModalOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<any>(null);
   
-  // Custom headers state
   const [customHeaders, setCustomHeaders] = useState<Record<string, string[]>>({
     "Tasks": ["title", "status", "priority", "dueDate"],
     "Contacts": ["name", "email", "phone", "company"],
@@ -58,28 +54,23 @@ const Notes = () => {
     "Ideas": ["title", "description", "category"]
   });
 
-  // Add new category handler
   const handleAddCategory = (category) => {
     setCategories(prev => [...prev, category]);
     
-    // Initialize empty records for the new category
     setRecords(prev => ({
       ...prev,
       [category.name]: []
     }));
     
-    // Initialize default headers for the new category
     setCustomHeaders(prev => ({
       ...prev,
       [category.name]: ["title", "description"]
     }));
     
-    // Select the newly created category
     setSelectedCategory(category);
     toast.success(`Category "${category.name}" created successfully`);
   };
 
-  // Filter records based on search term
   useEffect(() => {
     if (!selectedCategory) return;
     
@@ -97,7 +88,6 @@ const Notes = () => {
     }
   }, [searchTerm, selectedCategory, records]);
 
-  // Initialize records for a category if they don't exist
   useEffect(() => {
     if (selectedCategory && !records[selectedCategory.name]) {
       setRecords((prev) => ({ ...prev, [selectedCategory.name]: [] }));
@@ -108,25 +98,21 @@ const Notes = () => {
     }
   }, [selectedCategory]);
   
-  // Handle category selection
   const handleSelectCategory = (category) => {
     setSelectedCategory(category);
     setSearchTerm("");
   };
   
-  // Open add record modal
   const handleAddRecord = () => {
     setCurrentRecord(null);
     setIsAddEditModalOpen(true);
   };
   
-  // Open edit record modal
   const handleEditRecord = (record) => {
     setCurrentRecord(record);
     setIsAddEditModalOpen(true);
   };
   
-  // Delete record
   const handleDeleteRecord = (id) => {
     if (selectedCategory) {
       const categoryName = selectedCategory.name;
@@ -141,7 +127,6 @@ const Notes = () => {
     }
   };
   
-  // Save record (add or update)
   const handleSaveRecord = (recordData) => {
     if (!selectedCategory) return;
     
@@ -149,13 +134,11 @@ const Notes = () => {
     let updatedRecords;
     
     if (currentRecord) {
-      // Update existing record
       updatedRecords = records[categoryName].map(record => 
         record.id === currentRecord.id ? { ...recordData, id: currentRecord.id } : record
       );
       toast.success("Record updated successfully");
     } else {
-      // Add new record
       const newRecord = { ...recordData, id: uuidv4() };
       updatedRecords = [...(records[categoryName] || []), newRecord];
       toast.success("Record added successfully");
@@ -169,7 +152,6 @@ const Notes = () => {
     setIsAddEditModalOpen(false);
   };
   
-  // Import excel data
   const handleImportExcel = (data, sheetName) => {
     if (!data || !data.length) return;
     
@@ -180,16 +162,12 @@ const Notes = () => {
       icon: "FileSpreadsheet"
     };
     
-    // Add new headers based on first record's keys
     const headers = Object.keys(data[0]);
     
-    // Add the new category
     setCategories(prev => [...prev, newCategory]);
     
-    // Add records with IDs
     const recordsWithIds = data.map(record => ({ ...record, id: uuidv4() }));
     
-    // Update records and headers
     setRecords(prev => ({
       ...prev,
       [sheetName]: recordsWithIds
@@ -200,14 +178,12 @@ const Notes = () => {
       [sheetName]: headers
     }));
     
-    // Select the new category
     setSelectedCategory(newCategory);
     setIsImportModalOpen(false);
     
     toast.success(`Imported ${data.length} records to "${sheetName}"`);
   };
   
-  // Save custom headers
   const handleSaveCustomHeaders = (headers) => {
     if (!selectedCategory) return;
     
@@ -225,7 +201,6 @@ const Notes = () => {
       <Navbar />
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar
           categories={categories}
           selectedCategory={selectedCategory}
@@ -234,7 +209,6 @@ const Notes = () => {
           onAddCategory={handleAddCategory}
         />
         
-        {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">{selectedCategory?.name || "Notes"}</h1>
@@ -247,8 +221,14 @@ const Notes = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               
-              <Button variant="outline" size="icon" onClick={() => setIsCustomHeadersModalOpen(true)} title="Customize Headers">
-                <Settings className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCustomHeadersModalOpen(true)} 
+                title="Customize Headers"
+                className="gap-2"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Customize
               </Button>
               
               <Button onClick={handleAddRecord}>
@@ -267,7 +247,6 @@ const Notes = () => {
         </div>
       </div>
       
-      {/* Add/Edit Record Modal */}
       <AddEditRecordModal
         isOpen={isAddEditModalOpen}
         onClose={() => setIsAddEditModalOpen(false)}
@@ -277,14 +256,12 @@ const Notes = () => {
         onSave={handleSaveRecord}
       />
       
-      {/* Import Excel Modal */}
       <ImportExcelModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={handleImportExcel}
       />
       
-      {/* Custom Table Headers Modal */}
       <CustomTableHeadersModal
         isOpen={isCustomHeadersModalOpen}
         onClose={() => setIsCustomHeadersModalOpen(false)}
