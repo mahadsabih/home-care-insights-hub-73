@@ -1,94 +1,51 @@
+
 import React from "react";
-import { Users, Briefcase, ClipboardCheck, ClipboardList } from "lucide-react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
-import StatCard from "@/components/dashboard/StatCard";
+import { Button } from "@/components/ui/button";
+import QuickActions from "@/components/dashboard/QuickActions";
 import ShiftOverview from "@/components/dashboard/ShiftOverview";
 import ActivityLogSummary from "@/components/dashboard/ActivityLogSummary";
-import QuickActions from "@/components/dashboard/QuickActions";
 import DataVisualization from "@/components/dashboard/DataVisualization";
 import LiveCoverageMap from "@/components/dashboard/LiveCoverageMap";
+import { FileSpreadsheet } from "lucide-react";
 
 const Index = () => {
-  // Current date formatting
-  const currentDate = new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }).format(new Date());
-  
-  // Greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-  };
-
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
-      <div className="flex-1 space-y-8 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{getGreeting()}, Jane</h1>
-            <p className="text-muted-foreground">{currentDate}</p>
+      <main className="container mx-auto p-4 md:p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <div className="flex space-x-4">
+            <Button asChild variant="outline">
+              <Link to="/activity-log">Activity Log</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/roster">View Roster</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/notes">
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Notes & Excel Data
+              </Link>
+            </Button>
           </div>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard 
-            title="Active Clients" 
-            value={82}
-            icon={Users}
-            description="Receiving care today"
-            trend={{ value: 3, isPositive: true }}
-          />
-          <StatCard 
-            title="Staff On Duty" 
-            value={45}
-            icon={Briefcase} 
-            description="Currently working" 
-          />
-          <StatCard 
-            title="Shifts Scheduled" 
-            value={75}
-            icon={ClipboardCheck} 
-            description="For today" 
-            trend={{ value: 5, isPositive: true }}
-          />
-          <StatCard 
-            title="Pending Tasks" 
-            value={12} 
-            icon={ClipboardList}
-            description="Require attention"
-            trend={{ value: 2, isPositive: false }}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <QuickActions />
+          <ShiftOverview />
+          <ActivityLogSummary />
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-7 md:col-span-1 lg:col-span-3">
-            <ShiftOverview />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <DataVisualization />
           </div>
-          <div className="col-span-7 md:col-span-1 lg:col-span-4">
-            <ActivityLogSummary />
-          </div>
+          <LiveCoverageMap />
         </div>
-        
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-7 md:col-span-1 lg:col-span-3">
-            <QuickActions />
-          </div>
-          <div className="col-span-7 md:col-span-1 lg:col-span-4">
-            <LiveCoverageMap />
-          </div>
-        </div>
-        
-        <div className="grid gap-6">
-          <DataVisualization />
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
