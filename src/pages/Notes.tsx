@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -58,6 +57,27 @@ const Notes = () => {
     "Meetings": ["title", "date", "time", "participants"],
     "Ideas": ["title", "description", "category"]
   });
+
+  // Add new category handler
+  const handleAddCategory = (category) => {
+    setCategories(prev => [...prev, category]);
+    
+    // Initialize empty records for the new category
+    setRecords(prev => ({
+      ...prev,
+      [category.name]: []
+    }));
+    
+    // Initialize default headers for the new category
+    setCustomHeaders(prev => ({
+      ...prev,
+      [category.name]: ["title", "description"]
+    }));
+    
+    // Select the newly created category
+    setSelectedCategory(category);
+    toast.success(`Category "${category.name}" created successfully`);
+  };
 
   // Filter records based on search term
   useEffect(() => {
@@ -211,6 +231,7 @@ const Notes = () => {
           selectedCategory={selectedCategory}
           onSelectCategory={handleSelectCategory}
           onImportExcel={() => setIsImportModalOpen(true)}
+          onAddCategory={handleAddCategory}
         />
         
         {/* Main Content */}

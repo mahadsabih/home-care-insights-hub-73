@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, CheckSquare, Users, Briefcase, Calendar, Lightbulb, PlusCircle, Settings } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import AddCategoryModal from "./AddCategoryModal";
 
 interface SidebarProps {
   categories: {
@@ -18,6 +19,7 @@ interface SidebarProps {
   };
   onSelectCategory: (category: any) => void;
   onImportExcel: () => void;
+  onAddCategory: (category: { id: string; name: string; icon: string }) => void;
 }
 
 const Sidebar = ({
@@ -25,7 +27,10 @@ const Sidebar = ({
   selectedCategory,
   onSelectCategory,
   onImportExcel,
+  onAddCategory,
 }: SidebarProps) => {
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+  
   // Map icon names to Lucide icons
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -43,6 +48,11 @@ const Sidebar = ({
       default:
         return <FileSpreadsheet className="h-5 w-5" />;
     }
+  };
+
+  const handleAddCategory = (category: { id: string; name: string; icon: string }) => {
+    onAddCategory(category);
+    setIsAddCategoryModalOpen(false);
   };
 
   return (
@@ -85,15 +95,18 @@ const Sidebar = ({
         <Button
           variant="ghost"
           className="w-full justify-start mt-2"
-          onClick={() => {
-            // This would open a modal to create a new category in a real app
-            alert("This would create a new category in a real app");
-          }}
+          onClick={() => setIsAddCategoryModalOpen(true)}
         >
           <PlusCircle className="h-5 w-5 mr-2" />
           New Category
         </Button>
       </div>
+      
+      <AddCategoryModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onAddCategory={handleAddCategory}
+      />
     </div>
   );
 };
